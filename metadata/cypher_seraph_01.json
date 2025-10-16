@@ -1,0 +1,19 @@
+{
+  "name": "Cypher Seraph 01",
+  "description": "Ghost Signal NFT — Cypher Seraph 01",
+  "image": "ipfs://QmQyMhqfqKTEapCuKRA54nP2PRgJwWqriERAF9kCb3Kjgg",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Algo Sentinel 01",
+  "description": "Ghost Signal NFT — Algo Sentinel 01",
+  "image": "ipfs://QmQ617DeiKDr5zssK4a1uPe8Pk5qtwMLpUFiNDuAwXZvsa",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

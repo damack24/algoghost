@@ -1,0 +1,19 @@
+{
+  "name": "Synthetica Gaze 01",
+  "description": "Ghost Signal NFT — Synthetica Gaze 01",
+  "image": "ipfs://QmP326RRjzSQ2FqWMi4CCsToTR6n3Wwg6xmQ4pGbQrL1pC",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

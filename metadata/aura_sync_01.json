@@ -1,0 +1,19 @@
+{
+  "name": "Aura Sync 01",
+  "description": "Ghost Signal NFT — Aura Sync 01",
+  "image": "ipfs://QmXgtxTwFBiVtug6Bs44NWuQpTg2D6rQyvcP7Fkzdkpcdo",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

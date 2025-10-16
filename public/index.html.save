@@ -1,0 +1,719 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy-Linked Dynamic NFT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background for crypto feel */
+            color: #e2e8f0;
+        }
+        .nft-border-shadow {
+            /* Initial shadow for visual appeal */
+            box-shadow: 0 0 30px rgba(205, 127, 50, 0.5), 0 0 10px rgba(205, 127, 50, 0.2);
+            transition: all 0.5s ease-in-out;
+            position: relative;
+        }
+        /* Tier-specific borders for dynamic evolution */
+        .tier-bronze { border: 4px solid #CD7F32; } /* Bronze - Copper/Brown */
+        .tier-silver { border: 4px solid #C0C0C0; } /* Silver - Gray (Default fallback) */
+        .tier-gold { border: 4px solid #FFD700; } /* Gold - Yellow */
+        .tier-diamond { border: 4px solid #00FFFF; } /* Diamond - Cyan/Aqua */
+        .data-card {
+            background-color: #161b22;
+        }
+        /* Custom styling for input fields */
+        .metric-input {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .metric-input:focus {
+            border-color: #00FFFF;
+            outline: none;
+        }
+        /* Canvas styling to ensure it fills the container */
+        #nft-chart {
+            display: block;
+            background-color: #1e293b; /* Dark background for chart */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-cyan-400 mb-4"></i>
+            <p class="text-lg text-gray-300">Initializing Secure Connection...</p>
+        </div>
+    </div>
+
+    <header class="text-center mb-10 relative">
+        <!-- Wallet Connection Button (Top Right) -->
+        <div class="absolute top-0 right-0 mt-2 md:mt-0">
+            <button id="wallet-connect-btn" class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-lg transition duration-300 text-sm">
+                <i class="fas fa-wallet mr-2"></i>Connect Wallet
+            </button>
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+            Strategy-Linked Dynamic NFT
+        </h1>
+        <p id="user-id-display" class="text-sm text-gray-400 mt-2">User ID: Loading...</p>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- NFT Card (Visual & Primary Traits) -->
+        <section class="lg:col-span-1 data-card rounded-xl p-6 shadow-2xl flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4 text-cyan-400 border-b border-gray-700 pb-2 w-full text-center">Dynamic Scorecard NFT</h2>
+            <div id="nft-visual-card" class="nft-border-shadow rounded-xl overflow-hidden aspect-square w-full max-w-sm flex flex-col justify-end transition-all duration-500 relative tier-bronze">
+                <!-- CANVAS ELEMENT for the dynamic chart -->
+                <canvas id="nft-chart" width="400" height="400" class="w-full h-full transition-all duration-500"></canvas>
+                
+                <!-- P&L Overlay (MUST REMAIN IN PLACE) -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <p class="text-4xl font-black text-white text-center drop-shadow-2xl">
+                        <span id="pnl-summary" class="block text-red-400">0.00%</span>
+                        <span class="text-xl text-gray-400 block mt-1">Total P&L</span>
+                    </p>
+                </div>
+                
+                <!-- NFT Name & Tier Label -->
+                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900/90 to-transparent pointer-events-none">
+                    <p id="nft-name-label" class="text-xl font-medium text-gray-300 drop-shadow-lg">Aura Sync</p>
+                    <p id="nft-tier-label" class="text-3xl font-black text-white drop-shadow-lg">BRONZE BEGINNER</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 w-full">
+                <h3 class="text-xl font-semibold mb-3 text-gray-300">Active Traits:</h3>
+                <div id="nft-traits" class="flex flex-wrap gap-2">
+                    <span class="bg-gray-700 text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">New Minter</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Input Section: Backtest Results & Strategy Code -->
+        <section class="lg:col-span-2 space-y-8">
+            
+            <!-- Strategy Input Area -->
+            <div class="data-card rounded-xl p-6 shadow-xl">
+                <h2 class="text-2xl font-bold mb-4 text-cyan-400 border-b border-gray-700 pb-2"><i class="fas fa-terminal mr-2"></i> Strategy Backtest Simulation</h2>
+                <label for="python-strategy" class="block text-sm font-medium text-gray-400 mb-2">Paste Python Strategy Code (Mock Input):</label>
+                <textarea id="python-strategy" rows="6" class="w-full metric-input font-mono text-sm" placeholder="# Example: 
+# Strategy: Optimized for Alpha
+# Buy when RSI < 30 & MACD crosses up
+# Sell when price hits 2% profit or 1% loss"># Strategy: Initial Setup
+# This code will be analyzed to generate metrics automatically.
+# Try keywords like 'Dapp Scalper' or 'Optimized for Alpha'
+</textarea>
+                
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-300 border-b border-gray-700 pb-2">Backtest Performance Metrics (Auto-Generated Results)</h3>
+                <p class="text-sm text-gray-500 mb-4">These values are automatically generated from your strategy code input, simulating the backtest engine output.</p>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="input-pnl" class="block text-sm font-medium text-gray-400">Total P&L (%)</label>
+                        <input type="number" id="input-pnl" value="0.50" class="w-full metric-input" step="0.01" readonly>
+                    </div>
+                    <div>
+                        <label for="input-winrate" class="block text-sm font-medium text-gray-400">Win Rate (%)</label>
+                        <input type="number" id="input-winrate" value="45.00" class="w-full metric-input" step="0.01" readonly>
+                    </div>
+                    <div>
+                        <label for="input-drawdown" class="block text-sm font-medium text-gray-400">Max Drawdown (%)</label>
+                        <input type="number" id="input-drawdown" value="18.00" class="w-full metric-input" step="0.01" readonly>
+                    </div>
+                    <div>
+                        <label for="input-consistency" class="block text-sm font-medium text-gray-400">Consistency Score (0-100)</label>
+                        <input type="number" id="input-consistency" value="30" class="w-full metric-input" step="1" readonly>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="oracle-update-btn" class="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-gray-900 font-bold rounded-lg shadow-lg hover:from-purple-400 hover:to-pink-400 transition duration-300 active:translate-y-0.5" disabled>
+                        <i class="fas fa-layer-group mr-2"></i> Submit Backtest Results & Update dNFT
+                    </button>
+                    <p id="oracle-status" class="text-center text-sm mt-2 text-gray-500"></p>
+                </div>
+            </div>
+
+            <!-- Tier Criteria Table (Kept for reference) -->
+            <div class="data-card rounded-xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-gray-300">Tier Evolution Criteria</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-800">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tier</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Min P&L</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Min Win Rate</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Max Drawdown</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            <tr class="hover:bg-gray-800 transition duration-150"><td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-white">Diamond <i class="fas fa-crown text-cyan-400 ml-1"></i></td><td class="px-3 py-2 whitespace-nowrap text-sm text-green-400">> 50%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-white">> 75%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-red-400">< 5%</td></tr>
+                            <tr class="hover:bg-gray-800 transition duration-150"><td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-white">Gold <i class="fas fa-gem text-yellow-400 ml-1"></i></td><td class="px-3 py-2 whitespace-nowrap text-sm text-green-400">25% - 50%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-white">60% - 75%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-red-400">5% - 10%</td></tr>
+                            <tr class="hover:bg-gray-800 transition duration-150"><td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-white">Silver <i class="fas fa-star text-gray-400 ml-1"></i></td><td class="px-3 py-2 whitespace-nowrap text-sm text-green-400">10% - 25%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-white">50% - 60%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-red-400">10% - 15%</td></tr>
+                            <tr class="hover:bg-gray-800 transition duration-150"><td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-white">Bronze <i class="fas fa-medal text-orange-600 ml-1"></i></td><td class="px-3 py-2 whitespace-nowrap text-sm text-green-400">< 10%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-white">< 50%</td><td class="px-3 py-2 whitespace-nowrap text-sm text-red-400">> 15%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // setLogLevel('Debug'); // Enable Firestore logging
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        
+        // The placeholder images are no longer used; now we use the colors for the chart visual.
+        const NFT_ASSETS = {
+            'Diamond Veteran': {
+                name: 'Aetheria Oracle',
+                rarity: 'Legendary',
+                color: '#00FFFF', // Cyan/Aqua for Diamond
+            },
+            'Gold Strategist': {
+                name: 'The Enigma Protocol',
+                rarity: 'Legendary',
+                color: '#FFD700', // Gold Yellow
+            },
+            'Silver Apprentice': {
+                name: 'Data Echo',
+                rarity: 'Rare',
+                color: '#C0C0C0', // Silver Gray
+            },
+            'Bronze Beginner': {
+                name: 'Aura Sync',
+                rarity: 'Common',
+                color: '#CD7F32', // Bronze Copper
+            },
+        };
+
+        // --- MOCK WALLET & NFT CONTRACT SETUP ---
+        // Using the contract address provided by the user for simulated verification.
+        const NFT_CONTRACT_ADDRESS = "0x3931a71D529B3606F9A771f1e8A72C5882286eca";
+        let isWalletConnected = false;
+        // Mock wallet address for the simulated connection
+        const MOCK_WALLET_ADDRESS = "0xAbCdE84F7a61B2c3D4e5F6G7H8i9J0kL1mN2P3qR"; 
+
+        /**
+         * Function to shorten the address for display.
+         * @param {string} address - The full wallet address.
+         * @returns {string} The shortened address string.
+         */
+        const shortenAddress = (address) => {
+            if (!address) return "N/A";
+            return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+        };
+        
+        /**
+         * Simulates wallet connection/disconnection.
+         */
+        const connectWallet = () => {
+            const btn = document.getElementById('wallet-connect-btn');
+            
+            if (!isWalletConnected) {
+                // Simulate connection delay
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    isWalletConnected = true;
+                    btn.innerHTML = `<i class="fas fa-link mr-2"></i>${shortenAddress(MOCK_WALLET_ADDRESS)}`;
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    btn.disabled = false;
+                    
+                    console.log(`[Wallet] Connected successfully: ${MOCK_WALLET_ADDRESS}`);
+                    console.log(`[dNFT] Verifying against contract: ${NFT_CONTRACT_ADDRESS}`);
+                }, 1000);
+            } else {
+                // Simulate disconnection
+                isWalletConnected = false;
+                btn.innerHTML = '<i class="fas fa-wallet mr-2"></i>Connect Wallet';
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                console.log("[Wallet] Disconnected.");
+            }
+        };
+
+
+        
+        // --- FIREBASE INITIALIZATION AND AUTHENTICATION ---
+        const initializeFirebase = async () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                // Manually setting the firebaseConfig provided by the user
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBG0maZcQRapk-pp55pe2oVGaXTRBK9lsM",
+                    authDomain: "menwellnessapp.firebaseapp.com",
+                    projectId: "menwellnessapp",
+                    storageBucket: "menwellnessapp.firebasestorage.app",
+                    messagingSenderId: "1060633040328",
+                    appId: "1:1060633040328:web:b5517a58cf45a7c72c5cfd"
+                };
+                
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in logic
+                const authPromise = new Promise(resolve => {
+                    const handleAuth = async () => {
+                        
+                        let userCredential;
+                        try {
+                            // Using anonymous sign-in to guarantee a valid user session on external projects
+                            userCredential = await signInAnonymously(auth);
+                        } catch (error) {
+                            console.error("Critical: Anonymous sign-in failed. Please check your Firebase project configuration.", error);
+                            // Fallback if even anonymous sign-in fails
+                            userId = crypto.randomUUID();
+                            isAuthReady = true;
+                            document.getElementById('oracle-update-btn').disabled = true;
+                            resolve();
+                            return;
+                        }
+                        
+                        userId = userCredential.user.uid;
+                        
+                        // Display the full user ID as mandated for collaborative apps
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
+                        isAuthReady = true;
+                        document.getElementById('oracle-update-btn').disabled = false;
+                        resolve();
+                    };
+
+                    // Execute authentication immediately
+                    handleAuth();
+                });
+
+                await authPromise;
+                
+                // Start listening for NFT data changes
+                setupNftDataListener();
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                document.getElementById('user-id-display').textContent = "Initialization Failed";
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        };
+
+
+        // --- DYNAMIC NFT LOGIC ---
+
+        const NFT_COLLECTION_PATH = 'living_scorecards';
+        // Use the environment variable for the application ID
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        const getNFTDocRef = () => {
+            if (!db) return null;
+            
+            // Using a static document ID in the public path to ensure write success
+            // Path: artifacts/{appId}/public/data/living_scorecards/global_scorecard
+            return doc(db, `artifacts/${appId}/public/data/${NFT_COLLECTION_PATH}`, 'global_scorecard');
+        };
+
+        /**
+         * Calculates the Tier and Traits based on trading performance data.
+         * @param {Object} data - The raw trading data.
+         * @returns {Object} The updated NFT state including the tier string.
+         */
+        const calculateNFTState = (data) => {
+            let tier = 'Bronze Beginner';
+            let traits = new Set(['New Minter', 'Initial Scorecard']);
+
+            const pnl = parseFloat(data.pnl);
+            const winRate = parseFloat(data.winRate);
+            const drawdown = parseFloat(data.drawdown);
+            const consistency = parseFloat(data.consistency);
+
+            // 1. Tier Calculation 
+            if (pnl > 50 && winRate > 75 && drawdown < 5) {
+                tier = 'Diamond Veteran';
+            } else if (pnl >= 25 && winRate >= 60 && drawdown <= 10) {
+                tier = 'Gold Strategist';
+            } else if (pnl >= 10 && winRate >= 50 && drawdown <= 15) {
+                tier = 'Silver Apprentice';
+            }
+            
+            // 2. Trait Unlocking
+            if (drawdown < 5) {
+                traits.add('Fortress Steel Risk Management');
+            } else if (drawdown > 20) {
+                traits.add('High Risk / High Reward Profile');
+            }
+            
+            if (pnl >= 30 && consistency > 70) {
+                traits.add('Consistency Hunter');
+            }
+
+            // Tier-specific traits
+            if (tier.includes('Diamond')) {
+                traits.add('Market Oracle');
+                traits.delete('Initial Scorecard');
+            }
+            if (tier.includes('Gold')) {
+                traits.add('Proven Architect');
+                traits.delete('Initial Scorecard');
+            }
+            if (pnl >= 40 && winRate >= 70) {
+                 traits.add('Dapp Scalper Class');
+            }
+
+            // Get the corresponding NFT name and rarity from the asset map
+            const assetInfo = NFT_ASSETS[tier] || NFT_ASSETS['Bronze Beginner'];
+            traits.add(`Rarity: ${assetInfo.rarity}`);
+
+
+            return {
+                tier: tier,
+                pnl: pnl,
+                winRate: winRate,
+                drawdown: drawdown,
+                consistency: consistency,
+                traits: Array.from(traits)
+            };
+        };
+
+        /**
+         * Draws a simulated line chart representing P&L history on the canvas.
+         * @param {HTMLCanvasElement} canvas - The canvas element to draw on.
+         * @param {string} color - The base color for the chart line and gradient.
+         * @param {number} finalPnl - The final P&L value (used as the endpoint).
+         */
+        const drawPerformanceChart = (canvas, color, finalPnl) => {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 20;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+
+            ctx.clearRect(0, 0, width, height); // Clear previous drawings
+
+            // 1. Generate Mock Data Path (50 points from near 0 to finalPnl)
+            const numPoints = 50;
+            const mockData = [];
+            let currentValue = 0;
+            const startValue = finalPnl > 0 ? -10 : 10; // Start path in a more interesting way
+
+            // Create a path that smoothly transitions from the starting value to the finalPnl
+            for (let i = 0; i < numPoints; i++) {
+                // Simplified parabolic or logarithmic transition for smooth curve
+                const progression = i / (numPoints - 1);
+                // Introduce randomness based on the tier's PNL magnitude
+                const baseNoise = (Math.random() - 0.5) * (finalPnl / 10 + 2); 
+                const targetValue = progression * finalPnl + (1 - progression) * startValue;
+                currentValue = targetValue + baseNoise;
+                mockData.push(currentValue);
+            }
+            // Ensure the final point is exactly the reported PNL
+            mockData[numPoints - 1] = finalPnl;
+
+
+            // 2. Map data to canvas coordinates
+            const maxVal = Math.max(Math.abs(Math.min(...mockData)), Math.abs(Math.max(...mockData))) * 1.1; // 10% buffer
+            const scaleY = chartHeight / (maxVal * 2);
+            const zeroLineY = padding + chartHeight / 2;
+            const pointCoordinates = mockData.map((val, index) => ({
+                x: padding + (index / (numPoints - 1)) * chartWidth,
+                y: zeroLineY - val * scaleY // In canvas, Y=0 is top
+            }));
+
+            // 3. Draw Gradient Fill (Area below the line)
+            ctx.beginPath();
+            ctx.moveTo(pointCoordinates[0].x, zeroLineY);
+            pointCoordinates.forEach(point => ctx.lineTo(point.x, point.y));
+            ctx.lineTo(pointCoordinates[numPoints - 1].x, zeroLineY);
+            ctx.closePath();
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            // Adjust opacity for the fill to create a digital glow effect
+            gradient.addColorStop(0, color + '40'); // 25% opacity
+            gradient.addColorStop(1, color + '00'); // 0% opacity
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 4. Draw the Line
+            ctx.beginPath();
+            ctx.moveTo(pointCoordinates[0].x, pointCoordinates[0].y);
+            pointCoordinates.forEach(point => ctx.lineTo(point.x, point.y));
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // 5. Draw Zero Line (Reference for positive/negative P&L)
+            ctx.beginPath();
+            ctx.moveTo(padding, zeroLineY);
+            ctx.lineTo(width - padding, zeroLineY);
+            ctx.strokeStyle = '#30363d'; // Dark gray
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        };
+
+
+        /**
+         * Renders the current NFT state to the DOM, using the NFT_ASSETS map.
+         */
+        const renderNFT = (data) => {
+            const nftCard = document.getElementById('nft-visual-card');
+            const nftNameLabel = document.getElementById('nft-name-label');
+            const tierLabel = document.getElementById('nft-tier-label');
+            const nftTraitsContainer = document.getElementById('nft-traits');
+            const pnlSummary = document.getElementById('pnl-summary');
+
+            // Find the asset information based on the current tier
+            const assetInfo = NFT_ASSETS[data.tier] || NFT_ASSETS['Bronze Beginner'];
+            
+            // 1. Update Metrics Summary on the NFT Image
+            pnlSummary.textContent = `${data.pnl.toFixed(2)}%`;
+            pnlSummary.className = `block text-4xl font-black text-center drop-shadow-2xl ${data.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            
+            // Update input fields for initial load
+            document.getElementById('input-pnl').value = data.pnl.toFixed(2);
+            document.getElementById('input-winrate').value = data.winRate.toFixed(2);
+            document.getElementById('input-drawdown').value = data.drawdown.toFixed(2);
+            document.getElementById('input-consistency').value = data.consistency.toFixed(0);
+
+
+            // 2. Update Tier & Visuals (Chart, Name, Border Color, and Shadow)
+            nftNameLabel.textContent = assetInfo.name;
+            tierLabel.textContent = data.tier.toUpperCase();
+            
+            // Remove previous borders and set the new one
+            nftCard.classList.remove('tier-bronze', 'tier-silver', 'tier-gold', 'tier-diamond');
+            
+            let tierClass = 'tier-bronze';
+            if (data.tier.includes('Diamond')) {
+                tierClass = 'tier-diamond';
+            } else if (data.tier.includes('Gold')) {
+                tierClass = 'tier-gold';
+            } else if (data.tier.includes('Silver')) {
+                tierClass = 'tier-silver';
+            }
+
+            nftCard.classList.add(tierClass);
+
+            // Apply shadow changes from the asset map
+            nftCard.style.boxShadow = `0 0 30px ${assetInfo.color}80, 0 0 10px ${assetInfo.color}40`;
+
+            // Get the canvas element and draw the chart
+            const canvas = document.getElementById('nft-chart');
+            drawPerformanceChart(canvas, assetInfo.color, data.pnl);
+
+
+            // 3. Update Traits
+            nftTraitsContainer.innerHTML = '';
+            data.traits.forEach(trait => {
+                const badge = document.createElement('span');
+                // Highlight Rarity trait
+                const isRarity = trait.includes('Rarity:');
+                badge.className = `text-sm font-medium px-3 py-1 rounded-full shadow-md ${isRarity ? 'bg-purple-700 text-purple-300' : 'bg-cyan-900 text-cyan-300'}`;
+                badge.textContent = trait;
+                nftTraitsContainer.appendChild(badge);
+            });
+        };
+
+        // --- FIRESTORE SNAPSHOT LISTENER ---
+
+        const setupNftDataListener = () => {
+            if (!isAuthReady) {
+                console.log("Auth not ready. Skipping listener setup.");
+                return;
+            }
+
+            const docRef = getNFTDocRef();
+
+            // Fetch initial data or set up a listener
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log("Snapshot received:", data);
+                    renderNFT(data);
+                } else {
+                    console.log("No existing scorecard found. Initializing...");
+                    // Initialize the NFT for the first time
+                    const initialData = calculateNFTState({
+                        pnl: 0.5, 
+                        winRate: 45,
+                        drawdown: 18,
+                        consistency: 30
+                    });
+                    
+                    try {
+                        // Use setDoc to create the initial document
+                        setDoc(docRef, initialData);
+                        renderNFT(initialData);
+                    } catch (e) {
+                        console.error("Error writing initial document: ", e);
+                    }
+                }
+            }, (error) => {
+                console.error("Error listening to NFT snapshot:", error);
+            });
+        };
+
+        // --- PYTHON BACKTEST SIMULATION (JavaScript implementation of the backtest engine) ---
+
+        /**
+         * Simulates the Python backtest function to generate random metrics
+         * based on keywords in the strategy code.
+         * @param {string} strategyCode - The Python strategy code from the textarea.
+         * @returns {Object} The simulated trading metrics.
+         */
+        const simulatePythonBacktest = (strategyCode) => {
+            let pnl, win_rate, max_drawdown, consistency;
+
+            // Helper function for generating a random float within a range
+            const rand = (min, max) => (Math.random() * (max - min) + min);
+
+            // 1. Check for Diamond Tier
+            if (strategyCode.includes("Optimized for Alpha")) {
+                // Diamond Tier Metrics
+                pnl = rand(55.0, 80.0);
+                win_rate = rand(75.0, 90.0);
+                max_drawdown = rand(2.0, 4.9);
+                consistency = rand(80, 95);
+
+            // 2. Check for Dapp Scalper Tier (High Gold / Low Diamond)
+            } else if (strategyCode.includes("Dapp Scalper")) {
+                // High-Performance Bot Tier Metrics for Dapp Scalper
+                pnl = rand(40.0, 55.0);
+                win_rate = rand(70.0, 80.0);
+                max_drawdown = rand(5.0, 8.0);
+                consistency = rand(70, 85);
+
+            // 3. Check for successful, established strategies (Gold/Silver)
+            } else if (strategyCode.includes("SuperTrend") || strategyCode.includes("Golden Cross")) {
+                // Moderately Successful Strategy Metrics
+                pnl = rand(15.0, 40.0);
+                win_rate = rand(55.0, 70.0);
+                max_drawdown = rand(6.0, 15.0);
+                consistency = rand(50, 75);
+
+            // 4. Default aggressive/unrefined strategy (Bronze)
+            } else {
+                // Aggressive/Less Refined Strategy Metrics
+                pnl = rand(-5.0, 15.0);
+                win_rate = rand(40.0, 55.0);
+                max_drawdown = rand(10.0, 30.0);
+                consistency = rand(20, 50);
+            }
+
+            return {
+                pnl: parseFloat(pnl.toFixed(2)),
+                winRate: parseFloat(win_rate.toFixed(2)),
+                drawdown: parseFloat(max_drawdown.toFixed(2)),
+                consistency: Math.round(consistency)
+            };
+        };
+
+        // --- ORACLE SIMULATION ---
+
+        /**
+         * The main function simulating the Oracle's call to the Smart Contract.
+         */
+        const handleOracleUpdate = async () => {
+            if (!isAuthReady || !userId) {
+                console.error("System not authenticated.");
+                return;
+            }
+
+            const button = document.getElementById('oracle-update-btn');
+            const status = document.getElementById('oracle-status');
+            const strategyCode = document.getElementById('python-strategy').value;
+
+            button.disabled = true;
+            status.textContent = "Simulating Python Backtest and Fetching Oracle Data...";
+            status.classList.remove('text-green-400', 'text-red-400', 'text-gray-500');
+            status.classList.add('text-yellow-400');
+            
+            // 1. SIMULATE PYTHON BACKTEST to generate metrics
+            const generatedMetrics = simulatePythonBacktest(strategyCode);
+
+            // 2. Populate input fields with the generated results (User sees the outcome)
+            document.getElementById('input-pnl').value = generatedMetrics.pnl.toFixed(2);
+            document.getElementById('input-winrate').value = generatedMetrics.winRate.toFixed(2);
+            document.getElementById('input-drawdown').value = generatedMetrics.drawdown.toFixed(2);
+            document.getElementById('input-consistency').value = generatedMetrics.consistency.toFixed(0);
+
+            // 3. Simulate Oracle delay (2 seconds for validation and transmission)
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
+
+            // 4. Smart Contract Execution: Calculate new NFT state based on generated metrics
+            const newNftState = calculateNFTState(generatedMetrics);
+
+            // 5. Update the document via Firestore (simulating on-chain state update)
+            const docRef = getNFTDocRef();
+            try {
+                await setDoc(docRef, newNftState, { merge: true });
+                status.textContent = `dNFT Updated! New Tier: ${newNftState.tier}. The NFT chart has evolved!`;
+                status.classList.remove('text-yellow-400', 'text-red-400');
+                status.classList.add('text-green-400');
+            } catch (e) {
+                status.textContent = `Error during NFT update: ${e.message}`;
+                status.classList.remove('text-yellow-400', 'text-green-400');
+                status.classList.add('text-red-400');
+                console.error("Error updating document:", e);
+            } finally {
+                button.disabled = false;
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', initializeFirebase);
+        document.getElementById('oracle-update-btn').addEventListener('click', handleOracleUpdate);
+        document.getElementById('wallet-connect-btn').addEventListener('click', connectWallet);
+
+
+        // Add a listener to redraw the chart on window resize (for responsiveness)
+        window.addEventListener('resize', () => {
+            if (document.getElementById('nft-chart').getContext('2d')) {
+                // Trigger a re-render of the NFT state to redraw the chart with new dimensions
+                const currentPnl = parseFloat(document.getElementById('input-pnl').value);
+                const currentTierElement = document.getElementById('nft-tier-label');
+                
+                // Safety check for currentTierElement
+                if (!currentTierElement) return;
+
+                const currentTierText = currentTierElement.textContent;
+                
+                // Find the assetInfo by iterating through keys and checking if the tier name matches the text
+                const assetInfo = Object.keys(NFT_ASSETS).map(key => NFT_ASSETS[key]).find(asset => currentTierText.includes(asset.name.toUpperCase().split(' ')[0])) || NFT_ASSETS['Bronze Beginner'];
+
+                drawPerformanceChart(document.getElementById('nft-chart'), assetInfo.color, currentPnl);
+            }
+        });
+
+    </script>
+</body>
+</html>

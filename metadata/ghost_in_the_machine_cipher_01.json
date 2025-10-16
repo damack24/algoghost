@@ -1,0 +1,19 @@
+{
+  "name": "Ghost In The Machine Cipher 01",
+  "description": "Ghost Signal NFT — Ghost In The Machine Cipher 01",
+  "image": "ipfs://QmaeEtkKzEkfkigmkRvYc5P7SWdH79ptyNnS6QjPvA6fcH",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

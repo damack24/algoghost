@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Oracle Ghost — Polygon-only Holo Signal Hub</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{ --bg:#0b1220; --card:#0f1724; --accent:#00bcd4; --muted:#94a3b8; --pos:#10b981; --neg:#ef4444;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:#ecfeff;min-height:100vh;}
+    .code-input{font-family:'Fira Code',monospace;background:#071325;color:#a7f3d0;border:1px solid #213041;min-height:320px;}
+    .stat-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(0,188,212,0.06);padding:12px;border-radius:10px;}
+    .oracle-ghost-glowing{filter:drop-shadow(0 0 8px var(--accent));color:var(--accent);animation:glow 1s infinite alternate;}
+    @keyframes glow{from{filter:drop-shadow(0 0 4px var(--accent))}to{filter:drop-shadow(0 0 12px var(--accent))}}
+    .tooltip-content{background:#0b1220;border:1px solid var(--accent);padding:8px;border-radius:6px;position:absolute;bottom:125%;left:50%;transform:translateX(-50%);white-space:nowrap;opacity:0;visibility:hidden;transition:opacity .12s;}
+    .tooltip-container:hover .tooltip-content{opacity:1;visibility:visible;}
+    .tab-button.active{color:transparent;background-clip:text;background-image:linear-gradient(90deg,#00bcd4,#06b6d4);border-bottom:3px solid #00bcd4;}
+  </style>
+</head>
+<body class="p-6">
+
+  <!-- Config (Polygon-only) -->
+  <script>
+    const POLYGON_CHAIN_ID = 137;
+    const MINT_CONTRACT_ADDRESS = "0x3931a71d529b3606f9a771f1e8a72c5882286eca"; // your contract
+    const GHOST_TOKEN_ADDRESS = ""; // optional: set if you want admin rewards (ERC-20 on Polygon)
+    const POLYGON_RPC_FALLBACK = ""; // optional: e.g. https://polygon-rpc.com
+  </script>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <header class="flex flex-col sm:flex-row items-center justify-between mb-8 pb-4 border-b border-gray-800">
+      <div class="flex items-center gap-4">
+        <div class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400">🔮 Oracle Ghost (Polygon)</div>
+        <div class="text-sm text-gray-400">Holo Signal Feed · Strategy Backtester · Mint on Polygon</div>
+      </div>
+      <div class="flex items-center gap-3 mt-4 sm:mt-0">
+        <div id="chainBadge" class="text-sm font-mono px-3 py-1 rounded-full bg-gray-800 text-yellow-300">Chain: unknown</div>
+        <div id="walletInfo" class="text-sm font-mono px-3 py-1 rounded-full bg-gray-800 text-gray-300">Not connected</div>
+        <button id="connectBtn" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 rounded text-white">Connect Wallet</button>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- SIGNAL FEED + LEADERBOARD -->
+      <aside class="lg:col-span-1 space-y-6">
+        <section>
+          <h3 class="text-cyan-300 font-bold mb-3">Real-Time Holo Signal Feed</h3>
+          <div id="signalFeed" class="space-y-4"></div>
+        </section>
+
+        <section class="mt-4 p-4 bg-card rounded-xl border border-gray-800">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-sm font-semibold text-yellow-300">Leaderboard</h4>
+            <small class="text-xs text-gray-400">local</small>
+          </div>
+          <ol id="leaderboard" class="text-sm text-gray-300 space-y-2"></ol>
+          <div class="mt-3 text-xs text-gray-500">Top strategies by Sharpe. Saved locally in your browser.</div>
+        </section>
+
+        <section class="mt-4 p-4 bg-card rounded-xl border border-gray-800">
+          <h4 class="text-sm font-semibold text-pink-300 mb-2">Admin Reward (optional)</h4>
+          <div class="text-xs text-gray-400 mb-2">Paste treasury private key only in a secure environment to send ZBBY on Polygon.</div>
+          <input id="adminKey" type="password" placeholder="Treasury private key (hex)" class="w-full p-2 rounded bg-gray-900 border border-gray-800 text-xs mb-2">
+          <input id="rewardTo" placeholder="Recipient address" class="w-full p-2 rounded bg-gray-900 border border-gray-800 text-xs mb-2">
+          <div class="flex gap-2">
+            <input id="rewardAmt" type="number" placeholder="Amount" class="flex-1 p-2 rounded bg-gray-900 border border-gray-800 text-xs">
+            <button onclick="adminSendReward()" class="px-3 py-2 bg-pink-600 rounded text-white text-xs">Send</button>
+          </div>
+          <div id="adminStatus" class="text-xs text-gray-400 mt-2"></div>
+        </section>
+      </aside>
+
+      <!-- BACKTESTER & CONTROLS -->
+      <section class="lg:col-span-2 space-y-6">
+        <div class="p-4 bg-card rounded-xl border border-gray-800">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-cyan-300 font-bold">Python Strategy Backtester</h3>
+              <div class="text-xs text-gray-400">Paste your algorithmic snippets (we simulate results client-side).</div>
+            </div>
+            <div class="text-sm text-gray-400">
+              <span id="codeLen">0</span> / <span id="minLen">50</span> chars
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2">
+              <textarea id="codeInput" class="w-full code-input rounded-xl p-3" placeholder="# Paste your signal code here..."></textarea>
+              <div class="mt-4 flex gap-3">
+                <button id="runBtn" onclick="runBacktest()" class="px-4 py-2 bg-gradient-to-r from-teal-500 to-green-600 rounded text-white font-bold">Run Simulated Backtest</button>
+                <button onclick="exportLeaderboard()" class="px-4 py-2 bg-gray-800 rounded text-gray-300">Export Leaderboard</button>
+                <div id="backtestMsg" class="text-sm text-gray-400 self-center"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="stat-card mb-3">
+                <div class="text-xs text-gray-400">Gas (sim)</div>
+                <div id="gasBadge" class="mt-2 font-mono text-yellow-300">22 Gwei</div>
+              </div>
+              <div class="stat-card mb-3">
+                <div class="text-xs text-gray-400">Wallet Balance</div>
+                <div id="balBadge" class="mt-2 font-mono text-green-300">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="text-xs text-gray-400">Last Backtest</div>
+                <div id="lastSummary" class="mt-2 text-sm text-gray-300">None</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="resultsArea"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 border border-cyan-700 text-white p-3 rounded-xl opacity-0 pointer-events-none z-50"></div>
+
+    <footer class="mt-8 text-center text-xs text-gray-500">© 2025 Oracle Ghost — Polygon-only. Simulated backtests only.</footer>
+  </div>
+
+  <!-- Ethers v6 UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.1/dist/ethers.umd.min.js"></script>
+
+  <script>
+    /******************** State ********************/
+    const MIN_CODE_LEN = 50;
+    document.getElementById('minLen').textContent = MIN_CODE_LEN;
+    const signalFeedEl = document.getElementById('signalFeed');
+    const codeInput = document.getElementById('codeInput');
+    const codeLenEl = document.getElementById('codeLen');
+    const resultsArea = document.getElementById('resultsArea');
+    const leaderboardEl = document.getElementById('leaderboard');
+    const toast = document.getElementById('toast');
+    const gasBadge = document.getElementById('gasBadge');
+    const balBadge = document.getElementById('balBadge');
+    const chainBadge = document.getElementById('chainBadge');
+    const walletInfo = document.getElementById('walletInfo');
+    const connectBtn = document.getElementById('connectBtn');
+
+    let signals = [];
+    let leaderboard = JSON.parse(localStorage.getItem('ghost_leaderboard') || '[]');
+    let bookmarks = JSON.parse(localStorage.getItem('signal_bookmarks') || '{}');
+
+    // Web3
+    let provider = null;
+    let signer = null;
+    let userAddress = null;
+
+    // Feed & UI timers
+    const MAX_SIGNALS = 15;
+    const FEED_INTERVAL = 3000;
+    let feedTimer = null;
+
+    // Minter ABI (expects mint(string))
+    const MINTER_ABI = [
+      "function mint(string memory strategyId) public"
+    ];
+
+    /******************** Utilities ********************/
+    function showToast(msg, isError=false) {
+      toast.textContent = msg;
+      toast.style.borderColor = isError ? '#ef4444' : '#06b6d4';
+      toast.classList.remove('opacity-0','pointer-events-none');
+      toast.classList.add('opacity-100');
+      setTimeout(()=>{ toast.classList.add('opacity-0','pointer-events-none'); }, 3500);
+    }
+
+    function saveLeaderboard() {
+      localStorage.setItem('ghost_leaderboard', JSON.stringify(leaderboard));
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      if (!leaderboard.length) {
+        leaderboardEl.innerHTML = '<li class="text-gray-500">No entries yet.</li>';
+        return;
+      }
+      const top = leaderboard.slice().sort((a,b)=> b.sharpe - a.sharpe).slice(0,10);
+      leaderboardEl.innerHTML = top.map((e,i)=>`
+        <li class="flex justify-between border-b border-gray-800 pb-2">
+          <div><div class="text-sm font-semibold">${i+1}. ${e.name}</div><div class="text-xs text-gray-400">${new Date(e.ts).toLocaleString()}</div></div>
+          <div class="text-right"><div class="text-sm ${e.pnl>=0 ? 'text-green-400':'text-red-400'} font-mono">${e.pnl}%</div><div class="text-xs text-gray-400">SR ${e.sharpe}</div></div>
+        </li>`).join('');
+    }
+
+    function exportLeaderboard() {
+      const blob = new Blob([JSON.stringify(leaderboard, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `ghost_leaderboard_${Date.now()}.json`; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /******************** Signal Feed (simulated) ********************/
+    const VOICES = ["Kore","Charon","Orus","Iapetus","Algieba"];
+    function makeSignal(){
+      const types = [
+        { t:'depeg', text:'DEPEG/LIQ', color:'bg-red-600', icon:'🚨', insight:'Stablecoin peg stress detected', pnlMin:-0.35, pnlMax:-0.06, sMin:0.1, sMax:1.0 },
+        { t:'profit', text:'PROFIT ARB', color:'bg-green-600', icon:'✅', insight:'Gas drop — arb window', pnlMin:0.03, pnlMax:0.35, sMin:1.4, sMax:3.2 },
+        { t:'safe', text:'SAFE UPDATE', color:'bg-blue-600', icon:'ℹ️', insight:'Minor protocol update', pnlMin:-0.02, pnlMax:0.06, sMin:0.6, sMax:1.6 }
+      ];
+      const names = ['ETH/DAI Arb','USDC/TUSD Swap','BTC Futures Gap','SOL/DOGE Basis','LIDO Yield'];
+      const c = types[Math.floor(Math.random()*types.length)];
+      const pnl = (c.pnlMin + Math.random()*(c.pnlMax-c.pnlMin));
+      const sharpe = +(c.sMin + Math.random()*(c.sMax-c.sMin)).toFixed(2);
+      return {
+        id: crypto.randomUUID(),
+        name: names[Math.floor(Math.random()*names.length)],
+        typeText: c.text,
+        typeColor: c.color,
+        icon: c.icon,
+        pnl: +(pnl*100).toFixed(2),
+        sharpe,
+        ts: new Date().toISOString(),
+        snippet: `exec_strategy("${Math.random().toString(36).slice(2,8)}")`,
+        insight: c.insight,
+        voice: VOICES[Math.floor(Math.random()*VOICES.length)]
+      };
+    }
+
+    function renderSignalItem(s){
+      return `
+        <div id="sig-${s.id}" class="p-3 bg-gray-900 rounded-xl border border-gray-800">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <span class="${s.typeColor} text-xs px-2 py-0.5 rounded-full inline-flex items-center">${s.icon} <span class="ml-2">${s.typeText}</span></span>
+              <div>
+                <div class="font-semibold">${s.name}</div>
+                <div class="text-xs text-gray-400">${new Date(s.ts).toLocaleTimeString()}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="font-mono ${s.pnl>=0 ? 'text-green-400' : 'text-red-400'}">${s.pnl}%</div>
+              <div class="font-mono text-gray-400">SR ${s.sharpe.toFixed(2)}</div>
+              <button onclick="copyToClipboard('${s.snippet}')" class="text-gray-400 hover:text-cyan-300" title="Copy snippet">📋</button>
+              <button onclick="mintSignal('${s.id}')" class="px-2 py-1 bg-cyan-600 text-xs rounded text-white">MINT</button>
+            </div>
+          </div>
+          <div class="mt-2 text-xs text-gray-300 italic">${s.insight} <span class="ml-2 cursor-pointer" onclick="speak('${s.insight}','${s.voice}','sig-${s.id}')">👻</span></div>
+        </div>`;
+    }
+
+    function renderFeed(){
+      signalFeedEl.innerHTML = signals.map(renderSignalItem).join('');
+    }
+
+    function addSignalToFeed(){
+      if (signals.length >= MAX_SIGNALS) signals.pop();
+      const s = makeSignal();
+      signals.unshift(s);
+      renderFeed();
+    }
+
+    /******************** Backtester (simulated) ********************/
+    function simulate(codeText){
+      const complexity = 1 + (codeText.length / 500) * 0.5;
+      let pnl = +( (Math.random()*0.4 - 0.15) * complexity * 100 ).toFixed(2);
+      if (pnl > 0) pnl = +(pnl + 5).toFixed(2);
+      const sharpe = +(Math.max(0.2, (0.5 + Math.random()*2.5) * complexity)).toFixed(2);
+      let drawdown = +(15 + Math.random()*25).toFixed(2);
+      if (pnl > 0) drawdown = +(Math.max(5, drawdown / (1 + pnl/10))).toFixed(2);
+      return { pnl, sharpe, drawdown };
+    }
+
+    function renderResults(res, meta){
+      const pnlClass = res.pnl >= 0 ? 'text-green-400' : 'text-red-400';
+      const sharpeClass = res.sharpe > 1.0 ? 'text-cyan-300' : 'text-yellow-400';
+      resultsArea.innerHTML = `
+        <div class="p-6 bg-gray-900 rounded-xl border border-cyan-700/20">
+          <div class="flex items-center justify-between">
+            <div><div class="text-lg font-bold">${meta.name}</div><div class="text-xs text-gray-400">Simulated</div></div>
+            <div class="text-xs text-gray-400">ID ${meta.id}</div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 mt-4">
+            <div class="stat-card"><div class="text-xs text-gray-400">P&L %</div><div class="text-2xl font-extrabold ${pnlClass} mt-1">${res.pnl}%</div></div>
+            <div class="stat-card"><div class="text-xs text-gray-400">Sharpe</div><div class="text-2xl font-extrabold ${sharpeClass} mt-1">${res.sharpe}</div></div>
+            <div class="stat-card"><div class="text-xs text-gray-400">Max DD</div><div class="text-2xl font-extrabold text-gray-300 mt-1">${res.drawdown}%</div></div>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button onclick="mintBacktest('${meta.id}')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 rounded text-white font-bold">Mint Strategy Signal</button>
+            <button onclick="saveToLeaderboard(${res.pnl}, ${res.sharpe}, '${meta.name}', '${meta.id}')" class="px-4 py-2 bg-gray-800 rounded text-gray-300">Save to Leaderboard</button>
+            <div class="self-center text-sm text-gray-400">${res.sharpe>2 ? 'High Sharpe — qualifies for reward' : ''}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveToLeaderboard(pnl, sharpe, name, id){
+      leaderboard.push({ pnl, sharpe, name, id, ts: Date.now() });
+      localStorage.setItem('ghost_leaderboard', JSON.stringify(leaderboard));
+      renderLeaderboard();
+      showToast('Saved to leaderboard');
+    }
+
+    /******************** Wallet & Polygon-only logic ********************/
+    async function ensurePolygon() {
+      try {
+        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+        const chainId = Number(chainIdHex);
+        if (chainId !== POLYGON_CHAIN_ID) {
+          // request switch
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x' + POLYGON_CHAIN_ID.toString(16) }]
+            });
+            chainBadge.textContent = 'Chain: Polygon';
+            return true;
+          } catch (switchErr) {
+            showToast('Please switch your wallet to Polygon network.', true);
+            chainBadge.textContent = 'Chain: wrong';
+            return false;
+          }
+        } else {
+          chainBadge.textContent = 'Chain: Polygon';
+          return true;
+        }
+      } catch(e) {
+        chainBadge.textContent = 'Chain: unknown';
+        return false;
+      }
+    }
+
+    async function connectWallet(){
+      if (!window.ethereum) { showToast('No injected wallet found (MetaMask).', true); return; }
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const ok = await ensurePolygon();
+        if (!ok) return;
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
+        walletInfo.textContent = userAddress.slice(0,6) + '...' + userAddress.slice(-4);
+        connectBtn.disabled = true; connectBtn.textContent = 'Connected';
+        // balance
+        try {
+          const bal = await provider.getBalance(userAddress);
+          balBadge.textContent = `${Number(ethers.formatEther(bal)).toFixed(4)} MATIC`;
+        } catch(e){}
+        showToast('Wallet connected on Polygon');
+      } catch(e) {
+        console.error(e);
+        showToast('Connection failed', true);
+      }
+    }
+
+    connectBtn.addEventListener('click', connectWallet);
+
+    // Mint flow using ethers + mint(string)
+    async function mintSignal(id) {
+      if (!signer) { showToast('Connect wallet first', true); return; }
+      if (!MINT_CONTRACT_ADDRESS || MINT_CONTRACT_ADDRESS.includes('REPLACE')) { showToast('MINT_CONTRACT_ADDRESS not set.', true); return; }
+      try {
+        const contract = new ethers.Contract(MINT_CONTRACT_ADDRESS, MINTER_ABI, signer);
+        const tx = await contract.mint(id);
+        showToast('Mint tx sent — awaiting confirmation...');
+        await tx.wait();
+        showToast('Mint confirmed ✅');
+        // optionally add to leaderboard as minted
+        const s = signals.find(x=>x.id===id);
+        if (s) saveToLeaderboard(s.pnl, s.sharpe, s.name, id);
+      } catch(e){ console.error(e); showToast('Mint failed - see console', true); }
+    }
+
+    async function mintBacktest(id) {
+      if (!signer) { showToast('Connect wallet first', true); return; }
+      try {
+        const contract = new ethers.Contract(MINT_CONTRACT_ADDRESS, MINTER_ABI, signer);
+        const tx = await contract.mint(id);
+        showToast('Mint tx sent — awaiting confirmation...');
+        await tx.wait();
+        showToast('Backtest minted ✅');
+      } catch(e){ console.error(e); showToast('Mint failed', true); }
+    }
+
+    // Admin reward: send ERC20 on Polygon (optional)
+    async function adminSendReward(){
+      const priv = document.getElementById('adminKey').value.trim();
+      const to = document.getElementById('rewardTo').value.trim();
+      const amt = document.getElementById('rewardAmt').value.trim();
+      const status = document.getElementById('adminStatus');
+      if (!priv || !to || !amt) { status.textContent = 'Fill private key, recipient, amount.'; return; }
+      if (!ZBBY_TOKEN_ADDRESS) { status.textContent = 'ZBBY_TOKEN_ADDRESS not set in page config.'; return; }
+      status.textContent = 'Sending...';
+      try {
+        const rpc = POLYGON_RPC_FALLBACK || 'https://polygon-rpc.com';
+        const p = new ethers.JsonRpcProvider(rpc);
+        const wallet = new ethers.Wallet(priv, p);
+        const erc20 = new ethers.Contract(ZBBY_TOKEN_ADDRESS, ["function transfer(address,uint256) public returns(bool)", "function decimals() view returns(uint8)"], wallet);
+        let decimals = 18;
+        try { decimals = await erc20.decimals(); } catch(e){}
+        const amountScaled = ethers.parseUnits(amt, decimals);
+        const tx = await erc20.transfer(to, amountScaled);
+        status.textContent = 'Tx submitted: ' + tx.hash;
+        await tx.wait();
+        status.textContent = 'Reward sent ✅';
+        showToast('Reward tx confirmed');
+      } catch(e){ console.error(e); status.textContent = 'Send failed (see console)'; }
+    }
+
+    /******************** UI helpers ********************/
+    function copyToClipboard(text){ navigator.clipboard?.writeText(text).then(()=>showToast('Copied snippet'))}
+
+    function speak(text, voice, id) {
+      // quick visual + toast — implement Gemini TTS externally if you want audio
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('oracle-ghost-glowing'); setTimeout(()=>el.classList.remove('oracle-ghost-glowing'),2000); }
+      showToast('Oracle: ' + text);
+    }
+
+    /******************** Backtest button handler ********************/
+    async function runBacktest(){
+      const code = codeInput.value.trim();
+      if (code.length < MIN_CODE_LEN) { showToast(`Code too short — min ${MIN_CODE_LEN} chars`, true); return; }
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('runBtn').textContent = 'Running...';
+      showToast('Simulating backtest...');
+      await new Promise(r=>setTimeout(r, 1200));
+      const res = simulate(code);
+      const name = code.split('\n')[0]?.slice(0,40) || 'Backtest-' + Math.random().toString(36).slice(2,6);
+      const id = 'BT-' + Math.random().toString(36).slice(2,8);
+      renderResults(res, {name, id});
+      // inject signal into feed
+      signals.unshift({ id, name, pnl: res.pnl, sharpe: res.sharpe, ts: new Date().toISOString(), snippet: code.slice(0,80), insight:'Simulated backtest', voice:VOICES[0]});
+      if (signals.length > MAX_SIGNALS) signals.pop();
+      renderFeed();
+      // auto-save if sharpe > 2
+      if (res.sharpe >= 2.0) saveToLeaderboard(res.pnl, res.sharpe, name, id);
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('runBtn').textContent = 'Run Simulated Backtest';
+      document.getElementById('lastSummary').textContent = `${name} • P&L ${res.pnl}% • SR ${res.sharpe}`;
+      showToast(`Backtest complete — P&L ${res.pnl}%`);
+    }
+
+    /******************** Init ********************/
+    function init() {
+      // seed feed
+      for (let i=0;i<5;i++) signals.push(makeSignal());
+      renderFeed();
+      renderLeaderboard();
+      // feed loop
+      feedTimer = setInterval(addSignalToFeed, FEED_INTERVAL);
+      // update gas sim
+      setInterval(()=> { const g = Math.floor(20 + Math.random()*45); gasBadge.textContent = `${g} Gwei`; gasBadge.style.color = g>40 ? '#f87171' : (g>30 ? '#f59e0b' : '#a7f3d0'); }, 5000);
+
+      // code length UI
+      codeInput.addEventListener('input', ()=>{ codeLenEl.textContent = codeInput.value.length; });
+      // wallet chain change handler
+      if (window.ethereum) {
+        window.ethereum.on('chainChanged', async ()=> {
+          await ensurePolygon();
+        });
+        window.ethereum.on('accountsChanged', ()=> { location.reload(); });
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

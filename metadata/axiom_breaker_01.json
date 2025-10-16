@@ -1,0 +1,19 @@
+{
+  "name": "Axiom Breaker 01",
+  "description": "Ghost Signal NFT — Axiom Breaker 01",
+  "image": "ipfs://QmTvwH8SNpFoNc1mmTVQdY4drKJpqwaWim1631stZ3Vscx",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

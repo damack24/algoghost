@@ -1,0 +1,19 @@
+{
+  "name": "The Algorithmic Weaver 01",
+  "description": "Ghost Signal NFT — The Algorithmic Weaver 01",
+  "image": "ipfs://QmbNkM2Hqmn5BiUM6xQQ5BnhN7rBH7A7ouuKSmjfaU3cNu",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

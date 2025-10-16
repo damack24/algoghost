@@ -1,0 +1,19 @@
+{
+  "name": "Blind Oracle Of Code 01",
+  "description": "Ghost Signal NFT — Blind Oracle Of Code 01",
+  "image": "ipfs://Qmb5vUoSK89hdt8RdiKCjRG4a9r1Bvv2RUyGeZhAE9WusG",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Cipher Seer 01",
+  "description": "Ghost Signal NFT — Cipher Seer 01",
+  "image": "ipfs://QmdD6STpCn4wQ5HTQMnNz36SRzcniRHJ6oGoQuikAv6696",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

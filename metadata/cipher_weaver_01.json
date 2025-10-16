@@ -1,0 +1,19 @@
+{
+  "name": "Cipher Weaver 01",
+  "description": "Ghost Signal NFT — Cipher Weaver 01",
+  "image": "ipfs://Qmf2958CxK56iWZUrU1ydq3dU3ABwNk39BQ5cN8KjzBgGn",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

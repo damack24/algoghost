@@ -1,0 +1,19 @@
+{
+  "name": "Ghost Algo Trader 01",
+  "description": "Ghost Signal NFT — Ghost Algo Trader 01",
+  "image": "ipfs://Qmeu9FxazHB5Co7gZq7KwTcE3N7mg9yPJ2sDf9j8TxhDCM",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

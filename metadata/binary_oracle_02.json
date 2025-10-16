@@ -1,0 +1,19 @@
+{
+  "name": "Binary Oracle 02",
+  "description": "Ghost Signal NFT — Binary Oracle 02",
+  "image": "ipfs://QmP4Q1oL23A5eqz8n8mWagniGzY6ihR8Ruk1JnHsW3Cz14",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

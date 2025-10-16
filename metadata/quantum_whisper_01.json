@@ -1,0 +1,19 @@
+{
+  "name": "Quantum Whisper 01",
+  "description": "Ghost Signal NFT — Quantum Whisper 01",
+  "image": "ipfs://QmVx1QDsTyDBcgLxurfCWcRCJNDSc2Nm9egwFtGNP22aEN",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

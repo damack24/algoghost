@@ -1,0 +1,19 @@
+{
+  "name": "Oracle Data Streams 01",
+  "description": "Ghost Signal NFT — Oracle Data Streams 01",
+  "image": "ipfs://QmWhV7ynJUZT7cu2Ma98yS6K4JEyVPs6RGu5b61CPkMGC3",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

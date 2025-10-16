@@ -1,0 +1,19 @@
+{
+  "name": "Oracle Of Algorithms 01",
+  "description": "Ghost Signal NFT — Oracle Of Algorithms 01",
+  "image": "ipfs://QmeeqHHWsgk1177vf6Kjyu8FJfdduwyMoW2HmEUJnBkyS8",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}

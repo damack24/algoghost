@@ -1,0 +1,19 @@
+{
+  "name": "Cipher Oracle 02",
+  "description": "Ghost Signal NFT — Cipher Oracle 02",
+  "image": "ipfs://QmTG7BnPJNagZYyPcjCQzbuyzXJh4So3JnXFUhuEQB1drw",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Ghost Signal"
+    },
+    {
+      "trait_type": "Artist",
+      "value": "Cipher"
+    },
+    {
+      "trait_type": "Drop",
+      "value": "Genesis 50"
+    }
+  ]
+}
